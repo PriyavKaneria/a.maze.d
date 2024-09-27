@@ -4,7 +4,7 @@
 	import { tweened } from 'svelte/motion';
 
 	let maze: Array<Array<number | string>> = [];
-	let playerX = tweened(50, { duration: 0 });
+	let playerX = tweened(25, { duration: 0 });
 	let playerY = tweened(10, { duration: 0 });
 	let inventory = { stone: 1, paper: 1, scissors: 1 };
 	let innerWidth = 0;
@@ -93,52 +93,116 @@
 		}
 	}
 
-	function checkCollision(x: number, y: number, direction?: number): boolean {
-		const cellX = direction === 1 || true ? Math.floor(x / CELL_SIZE) : Math.ceil(x / CELL_SIZE);
-		const cellY = direction === 1 || true ? Math.floor(y / CELL_SIZE) : Math.ceil(y / CELL_SIZE);
+	function checkCollision(x: number, y: number): boolean {
+		const cellX = Math.floor(x / CELL_SIZE);
+		const cellY = Math.floor(y / CELL_SIZE);
 		if (cellX < 0 || cellX >= MAZE_WIDTH || cellY < 0 || cellY >= MAZE_HEIGHT) {
 			return false;
 		}
+		// console.log('checking collision', cellX, cellY, maze[cellY][cellX]);
 		return maze[cellY][cellX] === 1;
 	}
 
-	function handleMouseMove(event: { clientX: number }) {
+	let stuckLeft = false;
+	let stuckRight = false;
+	let quickStop = false;
+	function handleMouseMove(event: { clientX: number; movementX: number }) {
+		if (event.movementX === 0) {
+			return;
+		}
+		// mouse movement is too fast, stop the player
+		if (Math.abs(event.movementX) > 15) {
+			console.log('quick stop');
+			quickStop = true;
+			return;
+		}
+		if (quickStop) {
+			// if mouse in 10px range from player, reset quickStop
+			if (Math.abs(event.clientX - $playerX * CELL_SIZE) < 50) {
+				console.log('reset quick stop');
+				quickStop = false;
+			} else {
+				return;
+			}
+		}
+		const mouseDirection = event.movementX > 0 ? 1 : -1;
+		// for clamping, do not consider when
+		// 	 - mouse moving towards right, and ball clamped left (ballX > mouseX)
+		//   - mouse moving towards left, and ball clamped right (ballX < mouseX)
+		if (
+			(stuckLeft && event.clientX < $playerX * CELL_SIZE) ||
+			(stuckRight && event.clientX > $playerX * CELL_SIZE) ||
+			(mouseDirection === 1 && stuckRight) ||
+			(mouseDirection === -1 && stuckLeft)
+		) {
+			if (stuckLeft && event.clientX < $playerX * CELL_SIZE) {
+				console.log('stuck left, cannot move left');
+			} else if (stuckRight && event.clientX > $playerX * CELL_SIZE) {
+				console.log('stuck right, cannot move right');
+			} else if (mouseDirection === 1 && stuckRight) {
+				console.log('stuck right, cannot move right');
+			} else if (mouseDirection === -1 && stuckLeft) {
+				console.log('stuck left, cannot move left');
+			}
+			return;
+		}
 		const targetX = event.clientX;
-		const currentX = $playerX * CELL_SIZE;
+		const hitCellX = mouseDirection === 1 ? Math.floor($playerX) + 1 : Math.floor($playerX) - 1;
 
-		if (!checkCollision(targetX, $playerY * CELL_SIZE)) {
+		// console.log('hitCellX', hitCellX, 'targetX', targetX, 'mouseDirection', mouseDirection);
+		// clamp the player position to the maze
+		if (!checkCollision(hitCellX * CELL_SIZE + 2 * mouseDirection, $playerY * CELL_SIZE)) {
 			playerX.set(targetX / CELL_SIZE);
+			stuckLeft = false;
+			stuckRight = false;
+			console.log('not stuck');
+		} else {
+			// console.log('stuck', hitCellX, $playerX);
+			if (mouseDirection === 1) {
+				stuckRight = true;
+				stuckLeft = false;
+				console.log('stuck right');
+				playerX.set(hitCellX - 1);
+			} else {
+				stuckLeft = true;
+				stuckRight = false;
+				console.log('stuck left');
+				playerX.set(hitCellX + 1);
+			}
 		}
 
-		const cellX = Math.floor($playerX);
-		const cellY = Math.floor($playerY);
-		if (typeof maze[cellY][cellX] === 'string') {
-			const item = maze[cellY][cellX] as 'stone' | 'paper' | 'scissors';
-			inventory[item]++;
-			maze[cellY][cellX] = 0;
-		}
+		// const cellX = Math.floor($playerX);
+		// const cellY = Math.floor($playerY);
+		// if (typeof maze[cellY][cellX] === 'string') {
+		// 	const item = maze[cellY][cellX] as 'stone' | 'paper' | 'scissors';
+		// 	inventory[item]++;
+		// 	maze[cellY][cellX] = 0;
+		// }
 	}
 
 	let lastScrollPosition = 0;
 	function handleScroll(event: UIEvent) {
 		if (browser) {
 			const scrollDirection = window.scrollY - lastScrollPosition > 0 ? 1 : -1;
+			if (window.scrollY - lastScrollPosition > 10) {
+				// prevent scrolling too fast
+				console.log('scroll too fast');
+				window.scrollTo({
+					top: lastScrollPosition
+				});
+				return;
+			}
 			const targetY = window.scrollY / CELL_SIZE + 10;
 			const hitCellY = scrollDirection === 1 ? Math.floor($playerY) + 1 : Math.floor($playerY);
 			// scroll position of last valid position
 			const currentMaxScroll =
 				(scrollDirection === 1 ? hitCellY - 1 : hitCellY + 1) * CELL_SIZE -
 				(EMPTY_ZONE_HEIGHT * CELL_SIZE) / 2;
-			console.log(
-				scrollDirection,
-				hitCellY,
-				currentMaxScroll,
-				scrollDirection === 1 ? currentMaxScroll : currentMaxScroll + CELL_SIZE
-			);
 
-			if (!checkCollision($playerX * CELL_SIZE, hitCellY * CELL_SIZE, scrollDirection)) {
+			if (!checkCollision($playerX * CELL_SIZE, hitCellY * CELL_SIZE + 2 * scrollDirection)) {
 				playerY.set(targetY);
-				console.log('set', targetY);
+				stuckLeft = false;
+				stuckRight = false;
 			} else {
 				// scroll back to the previous position if there's a collision
 				window.scrollTo({
@@ -154,6 +218,9 @@
 		MAZE_WIDTH = Math.ceil(innerWidth / CELL_SIZE);
 		MAZE_HEIGHT = Math.floor((3 * innerHeight) / CELL_SIZE);
 		EMPTY_ZONE_HEIGHT = Math.floor(innerHeight / 2 / CELL_SIZE);
+
+		// set player position
+		playerX.set(MAZE_WIDTH / 2);
 
 		generateMaze();
 		if (browser) {
@@ -192,19 +259,16 @@
 			</div>
 		{/each}
 		<div
-			class="absolute w-3 h-3 bg-red-600 rounded-full transition-all duration-100 ease-out"
+			class="absolute w-3 h-3 bg-red-600 transition-all duration-100 ease-out"
 			style="left: {$playerX * CELL_SIZE}px; top: {$playerY *
-				CELL_SIZE}px;transform: translate(-50%, 50%);"
+				CELL_SIZE}px;transform: translate(0%, 50%);"
 		>
-			<!-- temp text	
+			<!-- temp text	 -->
 			{#if maze.length}
 				<div class="absolute -top-32 -left-32 bg-gray-800 text-white p-1 rounded w-32 h-32">
 					{Math.floor($playerX)}, {Math.floor($playerY)}
-					{#if checkCollision($playerX * CELL_SIZE, $playerY * CELL_SIZE)}
-						(1)
-					{/if}
 				</div>
-			{/if} -->
+			{/if}
 		</div>
 	</div>
 </div>
