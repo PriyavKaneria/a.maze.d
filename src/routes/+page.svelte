@@ -93,83 +93,67 @@
 		}
 	}
 
-	function checkCollision(x: number, y: number): boolean {
-		const cellX = Math.floor(x / CELL_SIZE);
-		const cellY = Math.floor(y / CELL_SIZE);
+	function checkCollision(cellX: number, cellY: number): boolean {
 		if (cellX < 0 || cellX >= MAZE_WIDTH || cellY < 0 || cellY >= MAZE_HEIGHT) {
 			return true; // Treat out-of-bounds as collision
 		}
+		console.log(cellX, cellY);
 		return maze[cellY][cellX] === 1;
 	}
 
-	let isStuck: boolean = false;
-	function handleMouseMove(event: { clientX: number; movementX: number }) {
-		const mouseX = event.clientX / CELL_SIZE;
-		const direction = Math.sign(event.movementX);
+	let lastMousePosition = 0;
+	function handleMouseMove(event: { clientX: number }) {
+		const targetCellX = Math.floor(event.clientX / CELL_SIZE);
+		lastMousePosition = event.clientX;
 
-		// If stuck, check if we can move in the direction of mouse movement
-		if (isStuck) {
-			const potentialX = direction > 0 ? Math.ceil($playerX) : Math.floor($playerX);
-			if (!checkCollision(potentialX * CELL_SIZE + direction, $playerY * CELL_SIZE)) {
-				isStuck = false;
-				$playerX = potentialX;
-			} else {
-				return; // Still stuck, don't move
+		// Move to the target cell until we hit a wall
+		if (targetCellX < $playerX) {
+			for (let x = $playerX - 1; x >= targetCellX; x--) {
+				if (checkCollision(x, $playerY)) {
+					break;
+				}
+				playerX.set(x);
+			}
+		} else if (targetCellX > $playerX) {
+			for (let x = $playerX + 1; x <= targetCellX; x++) {
+				if (checkCollision(x, $playerY)) {
+					break;
+				}
+				playerX.set(x);
 			}
 		}
-
-		// Calculate the potential new position
-		let newX = mouseX;
-
-		// Determine the cells to check based on movement direction
-		const currentCell = Math.floor($playerX);
-		const targetCell = Math.floor(newX);
-		const startCell = direction > 0 ? currentCell : targetCell;
-		const endCell = direction > 0 ? targetCell : currentCell;
-
-		// Check for collisions in the movement path
-		for (let cellX = startCell; cellX <= endCell; cellX++) {
-			if (
-				checkCollision(
-					cellX * CELL_SIZE + (direction > 0 ? CELL_SIZE - 1 : 0),
-					$playerY * CELL_SIZE
-				)
-			) {
-				// Collision detected, clamp to the nearest valid position
-				newX = direction > 0 ? cellX - 0.001 : cellX + 1.001; // Small offset to avoid rounding errors
-				isStuck = true;
-				break;
-			}
-		}
-
-		playerX.set(newX);
 	}
 
 	let lastScrollPosition = 0;
 	function handleScroll(event: UIEvent) {
 		if (typeof window !== 'undefined') {
 			const newScrollY = window.scrollY;
-			const scrollDirection = Math.sign(newScrollY - lastScrollPosition);
+			const targetCellY = Math.floor(newScrollY / CELL_SIZE) + 10; // +10 is an offset, adjust as needed
 
-			// Calculate the potential new Y position
-			const newY = newScrollY / CELL_SIZE + 10; // +10 is an offset, adjust as needed
-
-			// Check for collision in the scroll direction
-			const checkY = scrollDirection > 0 ? Math.ceil(newY) : Math.floor(newY);
-			console.log(Math.floor($playerX) * CELL_SIZE - 3, Math.ceil($playerX) * CELL_SIZE + 3);
-
-			if (
-				!checkCollision(Math.floor($playerX) * CELL_SIZE - 3, checkY * CELL_SIZE) &&
-				!checkCollision(Math.ceil($playerX) * CELL_SIZE + 3, checkY * CELL_SIZE)
-			) {
-				playerY.set(newY);
-				lastScrollPosition = newScrollY;
-			} else {
-				// If there's a collision, prevent scrolling
-				window.scrollTo({
-					top: lastScrollPosition
-				});
+			// Move to the target cell until we hit a wall
+			if (targetCellY < $playerY) {
+				for (let y = $playerY - 1; y >= targetCellY; y--) {
+					if (checkCollision($playerX, y)) {
+						window.scrollTo({
+							top: lastScrollPosition
+						});
+						break;
+					}
+					playerY.set(y);
+				}
+			} else if (targetCellY > $playerY) {
+				for (let y = $playerY + 1; y <= targetCellY; y++) {
+					if (checkCollision($playerX, y)) {
+						window.scrollTo({
+							top: lastScrollPosition
+						});
+						break;
+					}
+					playerY.set(y);
+				}
 			}
+			lastScrollPosition = window.scrollY;
+			handleMouseMove({ clientX: lastMousePosition });
 		}
 	}
 
@@ -180,7 +164,7 @@
 		EMPTY_ZONE_HEIGHT = Math.floor(innerHeight / 2 / CELL_SIZE);
 
 		// set player position
-		playerX.set(MAZE_WIDTH / 2);
+		playerX.set(Math.floor(MAZE_WIDTH / 2));
 
 		generateMaze();
 		if (browser) {
@@ -198,7 +182,7 @@
 	on:mousemove={handleMouseMove}
 />
 
-<div class="w-screen h-[450vh]">
+<div class="w-screen h-[450vh] pointer-events-none">
 	<div
 		class="fixed top-0 left-0 w-full h-12 bg-gray-800 text-white flex items-center justify-center z-10"
 	>
@@ -219,16 +203,8 @@
 			</div>
 		{/each}
 		<div
-			class="absolute w-4 h-4 bg-red-600 transition-all duration-100 ease-out"
-			style="left: {$playerX * CELL_SIZE}px; top: {$playerY *
-				CELL_SIZE}px;transform: translate(-50%, 20%);"
-		>
-			<!-- temp text	 -->
-			{#if maze.length}
-				<div class="absolute -top-32 -left-32 bg-gray-800 text-white p-1 rounded w-32 h-32">
-					{Math.floor($playerX)}, {Math.floor($playerY)}
-				</div>
-			{/if}
-		</div>
+			class="absolute w-5 h-5 bg-red-600 transition-all duration-100 ease-out"
+			style="left: {$playerX * CELL_SIZE}px; top: {$playerY * CELL_SIZE}px;"
+		></div>
 	</div>
 </div>
