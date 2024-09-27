@@ -37,6 +37,13 @@
 			}
 		}
 
+		// Create empty zone at the bottom
+		for (let y = 1; y < EMPTY_ZONE_HEIGHT; y++) {
+			for (let x = 1; x < MAZE_WIDTH - 1; x++) {
+				maze[MAZE_HEIGHT - y - 1][x] = 0;
+			}
+		}
+
 		// Generate maze
 		const stack: [number, number][] = [[1, EMPTY_ZONE_HEIGHT]];
 		maze[EMPTY_ZONE_HEIGHT][1] = 0;
@@ -74,11 +81,11 @@
 			}
 		}
 
-		// Create multiple exits at the bottom
+		// Create multiple exits at the end of the maze
 		for (let i = 0; i < 5; i++) {
 			const x = Math.floor(Math.random() * (MAZE_WIDTH - 2)) + 1;
-			maze[MAZE_HEIGHT - 1][x] = 0;
-			maze[MAZE_HEIGHT - 2][x] = 0;
+			maze[MAZE_HEIGHT - EMPTY_ZONE_HEIGHT - 1][x] = 0;
+			maze[MAZE_HEIGHT - EMPTY_ZONE_HEIGHT - 2][x] = 0;
 		}
 
 		// Add items
@@ -97,7 +104,6 @@
 		if (cellX < 0 || cellX >= MAZE_WIDTH || cellY < 0 || cellY >= MAZE_HEIGHT) {
 			return true; // Treat out-of-bounds as collision
 		}
-		console.log(cellX, cellY);
 		return maze[cellY][cellX] === 1;
 	}
 
@@ -182,13 +188,13 @@
 	on:mousemove={handleMouseMove}
 />
 
-<div class="w-screen h-[450vh] pointer-events-none">
+<div class="w-screen h-[350vh] pointer-events-none">
 	<div
 		class="fixed top-0 left-0 w-full h-12 bg-gray-800 text-white flex items-center justify-center z-10"
 	>
 		Inventory: Stone ({inventory.stone}) Paper ({inventory.paper}) Scissors ({inventory.scissors})
 	</div>
-	<div class="absolute top-0 left-0 w-screen h-[450vh]">
+	<div class="absolute top-0 left-0 w-screen h-[350vh]">
 		{#each maze as row, y}
 			<div class="flex">
 				{#each row as cell, x}
