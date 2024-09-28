@@ -4,6 +4,7 @@
 	import { tweened } from 'svelte/motion';
 	import StonePaperScissors from '$lib/stone-paper-scissor.svg';
 	import StonePaperScissorsMobile from '$lib/stone-paper-scissor-mobile.svg';
+	import { goto } from '$app/navigation';
 
 	let maze: Array<Array<number | 'stone' | 'paper' | 'scissors' | 'checkpoint'>> = [];
 	let playerX = tweened(25, { duration: 0 });
@@ -21,6 +22,7 @@
 	let useEmojis = true;
 	let timerStarted = false;
 	$: timer = 0;
+	let usedItems = 0;
 	let timerInterval: number;
 	let freeRoam = false;
 	let showOverlay = false;
@@ -162,6 +164,7 @@
 					}
 					inventory.paper--;
 					inventory.stone++;
+					usedItems++;
 					maze[cellY][cellX] = 0;
 					break;
 				case 'paper':
@@ -170,6 +173,7 @@
 					}
 					inventory.scissors--;
 					inventory.paper++;
+					usedItems++;
 					maze[cellY][cellX] = 0;
 					break;
 				case 'scissors':
@@ -178,6 +182,7 @@
 					}
 					inventory.stone--;
 					inventory.scissors++;
+					usedItems++;
 					maze[cellY][cellX] = 0;
 					break;
 				default:
@@ -355,11 +360,12 @@
 		const response = await fetch('/api/leaderboard', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ name: playerName, link: playerLink, time: timer })
+			body: JSON.stringify({ name: playerName, link: playerLink, time: timer, items: usedItems })
 		});
 		if (response.ok) {
 			showPopup = false;
 			alert('Your score has been added to the leaderboard!');
+			goto('/leaderboard');
 		} else {
 			alert('Failed to add your score. Please try again.');
 		}
@@ -397,6 +403,7 @@
 		window.scrollTo({
 			top: 0
 		});
+		usedItems = 0;
 		checkpoints = [];
 		inventory = { stone: 3, paper: 3, scissors: 3, checkpoints: 5 };
 		generateMaze();
@@ -583,7 +590,7 @@
 	<div class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
 		<div class="bg-white p-6 rounded-lg shadow-lg">
 			<h2 class="text-xl font-bold mb-4">
-				Congratulations! You completed the maze in {timer} seconds!
+				Congratulations! You completed the maze in {timer} seconds and used {usedItems} items.
 			</h2>
 			<form on:submit|preventDefault={handleSubmit}>
 				<div class="mb-4">

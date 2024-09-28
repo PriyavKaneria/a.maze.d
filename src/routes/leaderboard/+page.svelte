@@ -42,11 +42,19 @@
 </script>
 
 <div class="container mx-auto p-4">
-	<div class="flex items-end justify-start gap-6">
-		<h1 class="text-2xl font-bold mb-4">Leaderboard</h1>
-		<a href="/" class="text-blue-500 mb-4">
-			<span class="text-sm text-gray-500">Go back</span>
-		</a>
+	<div class="flex justify-between">
+		<div class="flex items-end justify-start gap-6">
+			<h1 class="text-2xl font-bold mb-4">Leaderboard</h1>
+			<a href="/" class="text-blue-500 mb-4">
+				<span class="text-sm text-gray-500">Go back</span>
+			</a>
+		</div>
+		<button
+			class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 h-max px-3 text-xs rounded hidden"
+			on:click={() => (window.location.href = '/api/leaderboard?all=true')}
+		>
+			Export all data
+		</button>
 	</div>
 	<table class="min-w-full bg-white">
 		<thead>
@@ -55,6 +63,7 @@
 				<th class="py-2 px-4 border-b text-left">Name</th>
 				<th class="py-2 px-4 border-b text-left">Social Media</th>
 				<th class="py-2 px-4 border-b text-left">Time (seconds)</th>
+				<th class="py-2 px-4 border-b text-left">Items used</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -62,10 +71,11 @@
 				<tr>
 					<td class="py-2 px-4 border-b">{(currentPage - 1) * entriesPerPage + index + 1}</td>
 					<td class="py-2 px-4 border-b">{entry.name}</td>
-					<td class="py-2 px-4 border-b"
-						><a href={entry.link} target="_blank" class="text-blue-500">{entry.link}</a></td
-					>
+					<td class="py-2 px-4 border-b">
+						<a href={entry.link} target="_blank" class="text-blue-500">{entry.link}</a>
+					</td>
 					<td class="py-2 px-4 border-b">{entry.time}</td>
+					<td class="py-2 px-4 border-b">{entry.items}</td>
 				</tr>
 			{/each}
 		</tbody>
