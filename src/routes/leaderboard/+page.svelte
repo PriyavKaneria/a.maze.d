@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Entry } from '$lib/database';
+	import type { Entry } from '$lib';
 	import { onMount } from 'svelte';
 
 	let entries: Entry[] = [];
@@ -12,9 +12,8 @@
 			`/api/leaderboard?limit=${entriesPerPage}&offset=${(currentPage - 1) * entriesPerPage}`
 		);
 		const data = await response.json();
-
-		if (data.entries.length > 0) {
-			entries = data.entries;
+		if (data.results.length > 0) {
+			entries = data.results;
 			return true;
 		}
 		return false;
