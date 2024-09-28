@@ -592,9 +592,10 @@
 
 {#if showPopup}
 	<div class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
-		<div class="bg-white p-6 rounded-lg shadow-lg">
+		<div class="bg-white p-6 rounded-lg shadow-lg max-w-[80%]">
 			<h2 class="text-xl font-bold mb-4">
-				Congratulations! You completed the maze in {timer} seconds and used {usedItems} items.
+				Congratulations! You are officially a-maze-ing by completing the maze in {timer} seconds and
+				using only {usedItems} items.
 			</h2>
 			<form on:submit|preventDefault={handleSubmit}>
 				<div class="mb-4">
