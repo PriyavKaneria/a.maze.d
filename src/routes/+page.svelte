@@ -251,10 +251,10 @@
 				for (let y = $playerY - 1; y >= targetCellY; y--) {
 					if (checkCollision($playerX, y)) {
 						if (!freeRoam) {
-							// window.scrollTo({
-							// 	top: lastScrollPosition
-							// });
-							// break;
+							window.scrollTo({
+								top: lastScrollPosition
+							});
+							break;
 						}
 					}
 					playerY.set(y);
@@ -263,10 +263,10 @@
 				for (let y = $playerY + 1; y <= targetCellY; y++) {
 					if (checkCollision($playerX, y)) {
 						if (!freeRoam) {
-							// window.scrollTo({
-							// 	top: lastScrollPosition
-							// });
-							// break;
+							window.scrollTo({
+								top: lastScrollPosition
+							});
+							break;
 						}
 					}
 					playerY.set(y);
