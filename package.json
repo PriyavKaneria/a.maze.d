@@ -16,7 +16,6 @@
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
 		"@types/eslint": "^9.6.0",
-		"@types/lodash": "^4.17.9",
 		"autoprefixer": "^10.4.20",
 		"eslint": "^9.0.0",
 		"eslint-config-prettier": "^9.1.0",
@@ -34,6 +33,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"lodash": "^4.17.21"
+		"sqlite": "^5.1.1",
+		"sqlite3": "^5.1.7"
 	}
 }
