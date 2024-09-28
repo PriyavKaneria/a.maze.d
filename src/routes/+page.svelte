@@ -194,6 +194,7 @@
 
 	let lastMousePosition = 0;
 	function handleMouseMove(event: MouseEvent | TouchEvent) {
+		if (showPopup) return;
 		// check touch input
 		if (event.type === 'touchmove') {
 			const touch = (event as TouchEvent).touches[0];
@@ -236,6 +237,7 @@
 	let lastScrollPosition = 0;
 	let checkpointScroll = false;
 	function handleScroll(event: UIEvent) {
+		if (showPopup) return;
 		if (checkpointScroll) {
 			checkpointScroll = false;
 			return;
@@ -249,10 +251,10 @@
 				for (let y = $playerY - 1; y >= targetCellY; y--) {
 					if (checkCollision($playerX, y)) {
 						if (!freeRoam) {
-							// window.scrollTo({
-							// 	top: lastScrollPosition
-							// });
-							// break;
+							window.scrollTo({
+								top: lastScrollPosition
+							});
+							break;
 						}
 					}
 					playerY.set(y);
@@ -261,10 +263,10 @@
 				for (let y = $playerY + 1; y <= targetCellY; y++) {
 					if (checkCollision($playerX, y)) {
 						if (!freeRoam) {
-							// window.scrollTo({
-							// 	top: lastScrollPosition
-							// });
-							// break;
+							window.scrollTo({
+								top: lastScrollPosition
+							});
+							break;
 						}
 					}
 					playerY.set(y);
@@ -279,6 +281,7 @@
 	}
 
 	const handleMouseDown = (event: MouseEvent | TouchEvent) => {
+		if (showPopup) return;
 		// check touch input
 		if (event.type === 'touchstart') {
 			const touch = (event as TouchEvent).touches[0];
@@ -320,6 +323,7 @@
 	};
 
 	const handleRightClick = (event: MouseEvent) => {
+		if (showPopup) return;
 		event.preventDefault();
 		// right click moves the player to the last checkpoint
 		if (checkpoints.length > 0) {
@@ -615,6 +619,13 @@
 					/>
 				</div>
 				<div class="flex items-center justify-between">
+					<button
+						class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+						type="button"
+						on:click={() => (showPopup = false)}
+					>
+						Cancel
+					</button>
 					<button
 						class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
 						type="submit"
