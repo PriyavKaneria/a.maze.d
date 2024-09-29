@@ -494,6 +494,10 @@
 	const handleRestart = () => {
 		timerStarted = false;
 		timer = 0;
+		checkpointScroll = true;
+		window.scrollTo({
+			top: 0
+		});
 		// set player position
 		if (innerWidth > 768) {
 			playerX.set(Math.floor(MAZE_WIDTH / 2));
@@ -502,10 +506,7 @@
 			playerX.set(5);
 			playerYOffset = Math.floor(MAZE_HEIGHT / 6);
 		}
-		checkpointScroll = true;
-		window.scrollTo({
-			top: 0
-		});
+		playerY.set(playerYOffset);
 		usedItems = 0;
 		checkpoints = [];
 		inventory = { stone: 3, paper: 3, scissors: 3, checkpoints: 5 };
