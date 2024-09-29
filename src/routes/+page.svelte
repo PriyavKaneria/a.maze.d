@@ -412,6 +412,10 @@
 		const urlParams = new URLSearchParams(window.location.search);
 		hardMode = urlParams.get('hardmode') === 'true';
 
+		if (hardMode) {
+			alert('Try this hard mode maze now for a challenge!');
+		}
+
 		// set sizes
 		MAZE_WIDTH = Math.ceil(innerWidth / CELL_SIZE);
 		MAZE_HEIGHT = hardMode
@@ -455,6 +459,9 @@
 		if (response.ok) {
 			showPopup = false;
 			alert('Your score has been added to the leaderboard!');
+			if (hardMode) {
+				goto('/leaderboard?hardmode=true');
+			}
 			enableHardMode();
 		} else {
 			alert('Failed to add your score. Please try again.');
