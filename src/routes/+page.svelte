@@ -264,7 +264,7 @@
 
 	let lastScrollPosition = 0;
 	let checkpointScroll = false;
-	function handleScroll(event: UIEvent) {
+	function handleScroll() {
 		if (showPopup) return;
 		if (checkpointScroll) {
 			checkpointScroll = false;
@@ -366,41 +366,6 @@
 			});
 			maze[lastCheckpoint.y][lastCheckpoint.x] = 0; // remove the checkpoint
 			checkpoints.pop();
-			inventory.checkpoints++;
-		}
-	};
-
-	const handleKeyPress = (event: KeyboardEvent) => {
-		if (showPopup) return;
-		switch (event.key) {
-			case 'w':
-				if (checkCollision($playerX, $playerY - 1)) {
-					break;
-				}
-				playerY.set($playerY - 1);
-				break;
-			case 's':
-				if (checkCollision($playerX, $playerY + 1)) {
-					break;
-				}
-				playerY.set($playerY + 1);
-				break;
-			case 'a':
-				if (checkCollision($playerX - 1, $playerY)) {
-					break;
-				}
-				playerX.set($playerX - 1);
-				lastMousePosition = $playerX * CELL_SIZE;
-				break;
-			case 'd':
-				if (checkCollision($playerX + 1, $playerY)) {
-					break;
-				}
-				playerX.set($playerX + 1);
-				lastMousePosition = $playerX * CELL_SIZE;
-				break;
-			default:
-				break;
 		}
 	};
 
@@ -513,8 +478,14 @@
 	const handleRestart = () => {
 		timerStarted = false;
 		timer = 0;
-		playerX.set(Math.floor(MAZE_WIDTH / 2));
-		playerY.set(10);
+		// set player position
+		if (innerWidth > 768) {
+			playerX.set(Math.floor(MAZE_WIDTH / 2));
+			playerYOffset = 10;
+		} else {
+			playerX.set(5);
+			playerYOffset = Math.floor(MAZE_HEIGHT / 6);
+		}
 		checkpointScroll = true;
 		window.scrollTo({
 			top: 0
@@ -532,7 +503,6 @@
 	bind:innerHeight
 	on:scroll={handleScroll}
 	on:mousemove={handleMouseMove}
-	on:keypress={handleKeyPress}
 	on:keydown={handleKeyDown}
 />
 
@@ -627,11 +597,47 @@
 				</button>
 			{/if}
 			<a
-				class="bg-amber-500 text-white px-2 md:px-4 py-1 md:py-2 rounded-md pointer-events-auto cursor-pointer fixed top-32 md:top-12 right-6"
+				class="bg-amber-500 text-zinc-600 px-2 md:px-4 py-1 md:py-2 rounded-md pointer-events-auto cursor-pointer fixed top-32 md:top-12 right-6"
 				href="/leaderboard"
 			>
 				Leaderboard
 			</a>
+			<button
+				class="fixed w-max text-md top-36 md:top-20 right-2 m-4 bg-yellow-400 text-zinc-600 p-2 rounded-md pointer-events-auto cursor-pointer z-10 disabled:bg-gray-400"
+				on:click={() => {
+					// set player position
+					if (innerWidth > 768) {
+						playerX.set(Math.floor(MAZE_WIDTH / 2));
+						playerYOffset = 10;
+					} else {
+						playerX.set(5);
+						playerYOffset = Math.floor(MAZE_HEIGHT / 6);
+					}
+					playerY.set(playerYOffset);
+					checkpointScroll = true;
+					window.scrollTo({
+						top: 0
+					});
+				}}
+			>
+				Go to spawn 🏁
+			</button>
+			<!-- go to checkpoint button -->
+			{#if checkpoints.length > 0}
+				<button
+					class="fixed w-max text-md top-[11.5rem] md:top-[8rem] right-2 m-4 bg-yellow-400 text-zinc-600 p-2 rounded-md pointer-events-auto cursor-pointer z-10 disabled:bg-gray-400"
+					on:click={handleRightClick}
+				>
+					Go to last ckpt 🚩
+				</button>
+			{:else}
+				<button
+					class="fixed w-max text-md top-[11.5rem] md:top-[8rem] right-2 m-4 bg-yellow-400 text-zinc-600 p-2 rounded-md pointer-events-auto cursor-pointer z-10 disabled:bg-gray-400"
+					disabled
+				>
+					Go to last ckpt 🚩
+				</button>
+			{/if}
 			<!-- <button
 			class="bg-red-600 text-white px-4 py-2 rounded-md pointer-events-auto cursor-pointer"
 			on:click={() => {
@@ -650,15 +656,6 @@
 			class="absolute top-16 mt-24 md:mt-6 w-[90%] md:w-auto md:h-[35%] pointer-events-none select-none"
 		/>
 	</div>
-	<!-- go to checkpoint button for mobile -->
-	{#if checkpoints.length > 0}
-		<button
-			class="fixed bottom-0 right-0 m-4 bg-yellow-400 text-black p-2 rounded-md pointer-events-auto cursor-pointer z-10"
-			on:click={handleRightClick}
-		>
-			🚩
-		</button>
-	{/if}
 	<div
 		class="absolute top-0 left-0 w-screen h-[350vh] pointer-events-auto overflow-hidden"
 		aria-hidden="true"
