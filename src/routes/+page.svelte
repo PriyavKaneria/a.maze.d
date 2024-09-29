@@ -29,6 +29,8 @@
 	let showOverlay = false;
 	let overlayDiv: HTMLDivElement;
 
+	let hardMode = false;
+
 	// popup form
 	let showPopup = false;
 	let playerName = '';
@@ -135,7 +137,7 @@
 		const items = ['stone', 'paper', 'scissors'];
 		const numberItems =
 			innerWidth > 1440 ? 400 : innerWidth > 1024 ? 300 : innerWidth > 768 ? 200 : 150;
-		for (let i = 0; i < numberItems; i++) {
+		for (let i = 0; i < (hardMode ? numberItems + 100 : numberItems); i++) {
 			const x = Math.floor(Math.random() * (MAZE_WIDTH - 2)) + 1;
 			const y =
 				Math.floor(Math.random() * (MAZE_HEIGHT - 2 * EMPTY_ZONE_HEIGHT - 2)) +
@@ -407,9 +409,16 @@
 	};
 
 	onMount(() => {
+		const urlParams = new URLSearchParams(window.location.search);
+		hardMode = urlParams.get('hardmode') === 'true';
+
 		// set sizes
 		MAZE_WIDTH = Math.ceil(innerWidth / CELL_SIZE);
-		MAZE_HEIGHT = Math.floor((3 * innerHeight) / CELL_SIZE);
+		MAZE_HEIGHT = hardMode
+			? Math.ceil((innerHeight * 5) / CELL_SIZE)
+			: innerWidth > 768
+				? Math.floor((3 * innerHeight) / CELL_SIZE)
+				: Math.floor((4 * innerHeight) / CELL_SIZE);
 
 		EMPTY_ZONE_HEIGHT =
 			innerWidth > 768
@@ -446,7 +455,7 @@
 		if (response.ok) {
 			showPopup = false;
 			alert('Your score has been added to the leaderboard!');
-			goto('/leaderboard');
+			enableHardMode();
 		} else {
 			alert('Failed to add your score. Please try again.');
 		}
@@ -495,6 +504,13 @@
 		inventory = { stone: 3, paper: 3, scissors: 3, checkpoints: 5 };
 		generateMaze();
 		clearInterval(timerInterval);
+	};
+
+	const enableHardMode = () => {
+		const url = new URL(window.location.toString());
+		url.searchParams.set('hardmode', 'true');
+		window.location.href = url.toString();
+		location.reload();
 	};
 </script>
 
@@ -707,7 +723,7 @@
 		<div class="bg-white p-6 rounded-lg shadow-lg max-w-[80%]">
 			<h2 class="text-xl font-bold mb-4">
 				Congratulations! You are officially a-maze-ing by completing the maze in {timer} seconds and
-				using only {usedItems} items.
+				using only {usedItems} items {hardMode ? 'in hard mode!' : '!'}
 			</h2>
 			<form on:submit|preventDefault={handleSubmit}>
 				<div class="mb-4">

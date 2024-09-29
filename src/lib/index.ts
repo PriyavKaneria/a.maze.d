@@ -4,4 +4,5 @@ export type Entry = {
     link: string | null;
     time: number;
     items: number;
+    hardmode: boolean;
 };

@@ -7,9 +7,13 @@
 	const entriesPerPage = 50;
 	let disableNext = false;
 
-	const fetchEntries = async () => {
+	let hardmode = false;
+
+	const fetchEntries = async (hardmode: boolean) => {
 		const response = await fetch(
-			`/api/leaderboard?limit=${entriesPerPage}&offset=${(currentPage - 1) * entriesPerPage}`
+			`/api/leaderboard?limit=${entriesPerPage}&offset=${(currentPage - 1) * entriesPerPage}${
+				hardmode ? '&hardmode=true' : ''
+			}`
 		);
 		const data = await response.json();
 		if (data.results.length > 0) {
@@ -19,11 +23,15 @@
 		return false;
 	};
 
-	onMount(fetchEntries);
+	onMount(() => {
+		const urlParams = new URLSearchParams(window.location.search);
+		hardmode = urlParams.get('hardmode') === 'true';
+		fetchEntries(hardmode);
+	});
 
 	const nextPage = () => {
 		currentPage++;
-		fetchEntries().then((res) => {
+		fetchEntries(hardmode).then((res) => {
 			if (!res) {
 				currentPage--;
 				disableNext = true;
@@ -35,7 +43,7 @@
 		disableNext = false;
 		if (currentPage > 1) {
 			currentPage--;
-			fetchEntries();
+			fetchEntries(hardmode);
 		}
 	};
 </script>
@@ -43,11 +51,26 @@
 <div class="container mx-auto p-4">
 	<div class="flex justify-between">
 		<div class="flex items-end justify-start gap-6">
-			<h1 class="text-2xl font-bold mb-4">Leaderboard</h1>
+			<h1 class="text-2xl font-bold mb-4">{hardmode ? 'Hardboard' : ''} Leaderboard</h1>
 			<a href="/" class="text-blue-500 mb-4">
 				<span class="text-sm text-gray-500">Go back</span>
 			</a>
 		</div>
+		{#if !hardmode}
+			<button
+				class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 h-max px-3 text-xs rounded"
+				on:click={() => (window.location.href = '/leaderboard?hardmode=true')}
+			>
+				Hard mode
+			</button>
+		{:else}
+			<button
+				class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 h-max px-3 text-xs rounded"
+				on:click={() => (window.location.href = '/leaderboard')}
+			>
+				Normal mode
+			</button>
+		{/if}
 		<button
 			class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-1 h-max px-3 text-xs rounded hidden"
 			on:click={() => (window.location.href = '/api/leaderboard?all=true')}
