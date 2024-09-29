@@ -18,6 +18,7 @@
 	let MAZE_HEIGHT = 150; // 450vh * 5 (assuming 1vh = 5px)
 	let CELL_SIZE = 20;
 	let EMPTY_ZONE_HEIGHT = 25; // 50vh * 5
+	let playerYOffset = 10;
 
 	let useEmojis = true;
 	let timerStarted = false;
@@ -41,7 +42,7 @@
 				// spawn a random item at spawn
 				const items = ['stone', 'paper', 'scissors'];
 				const x = Math.floor(Math.random() * (MAZE_WIDTH - 2)) + 1;
-				const y = Math.floor(Math.random() * (EMPTY_ZONE_HEIGHT - 2 - 10)) + 10;
+				const y = Math.floor(Math.random() * (EMPTY_ZONE_HEIGHT - 2 - 10)) + playerYOffset;
 				maze[y][x] = items[Math.floor(Math.random() * items.length)] as
 					| 'stone'
 					| 'paper'
@@ -193,16 +194,8 @@
 	}
 
 	let lastMousePosition = 0;
-	function handleMouseMove(event: MouseEvent | TouchEvent) {
+	function handleMouseMove(event: MouseEvent) {
 		if (showPopup) return;
-		// check touch input
-		if (event.type === 'touchmove') {
-			const touch = (event as TouchEvent).touches[0];
-			event = new MouseEvent('mousemove', {
-				clientX: touch.clientX
-			});
-		}
-		event = event as MouseEvent;
 		const targetCellX = Math.floor(event.clientX / CELL_SIZE);
 		lastMousePosition = event.clientX;
 
@@ -234,6 +227,41 @@
 		}
 	}
 
+	let touchStartX = 0;
+	let playerStartX = 0;
+	function handleTouchStart(event: TouchEvent) {
+		if (showPopup) return;
+		const touch = event.touches[0];
+		touchStartX = touch.clientX;
+		playerStartX = $playerX;
+	}
+
+	function handleTouchMove(event: TouchEvent) {
+		if (showPopup) return;
+		// move relative to touchstart using amount of touchmove
+		const touch = event.touches[0];
+		// sensitivity
+		const diff = touch.clientX - touchStartX;
+		const targetCellX = playerStartX + Math.floor(diff / CELL_SIZE);
+
+		// Move to the target cell until we hit a wall
+		if (targetCellX < $playerX) {
+			for (let x = $playerX - 1; x >= targetCellX; x--) {
+				if (checkCollision(x, $playerY)) {
+					break;
+				}
+				playerX.set(x);
+			}
+		} else if (targetCellX > $playerX) {
+			for (let x = $playerX + 1; x <= targetCellX; x++) {
+				if (checkCollision(x, $playerY)) {
+					break;
+				}
+				playerX.set(x);
+			}
+		}
+	}
+
 	let lastScrollPosition = 0;
 	let checkpointScroll = false;
 	function handleScroll(event: UIEvent) {
@@ -244,7 +272,7 @@
 		}
 		if (typeof window !== 'undefined') {
 			const newScrollY = window.scrollY;
-			const targetCellY = Math.floor(newScrollY / CELL_SIZE) + 10; // +10 is an offset, adjust as needed
+			const targetCellY = Math.floor(newScrollY / CELL_SIZE) + playerYOffset;
 
 			// Move to the target cell until we hit a wall
 			if (targetCellY < $playerY) {
@@ -273,10 +301,12 @@
 				}
 			}
 			lastScrollPosition = window.scrollY;
-			const mouseEvent = new MouseEvent('mousemove', {
-				clientX: lastMousePosition
-			});
-			handleMouseMove(mouseEvent);
+			if (innerWidth > 768) {
+				const mouseEvent = new MouseEvent('mousemove', {
+					clientX: lastMousePosition
+				});
+				handleMouseMove(mouseEvent);
+			}
 		}
 	}
 
@@ -340,14 +370,96 @@
 		}
 	};
 
+	const handleKeyPress = (event: KeyboardEvent) => {
+		if (showPopup) return;
+		switch (event.key) {
+			case 'w':
+				if (checkCollision($playerX, $playerY - 1)) {
+					break;
+				}
+				playerY.set($playerY - 1);
+				break;
+			case 's':
+				if (checkCollision($playerX, $playerY + 1)) {
+					break;
+				}
+				playerY.set($playerY + 1);
+				break;
+			case 'a':
+				if (checkCollision($playerX - 1, $playerY)) {
+					break;
+				}
+				playerX.set($playerX - 1);
+				lastMousePosition = $playerX * CELL_SIZE;
+				break;
+			case 'd':
+				if (checkCollision($playerX + 1, $playerY)) {
+					break;
+				}
+				playerX.set($playerX + 1);
+				lastMousePosition = $playerX * CELL_SIZE;
+				break;
+			default:
+				break;
+		}
+	};
+
+	const handleKeyDown = (event: KeyboardEvent) => {
+		if (showPopup) return;
+		if (event.key === ' ') {
+			event.preventDefault();
+			// space bar to place checkpoint
+			if (inventory.checkpoints === 0) {
+				alert('You are out of checkpoints!');
+				return;
+			}
+			if (maze[$playerY][$playerX] === 'checkpoint') {
+				return;
+			}
+			maze[$playerY][$playerX] = 'checkpoint';
+			checkpoints.push({ x: $playerX, y: $playerY, scrollY: window.scrollY });
+			inventory.checkpoints--;
+		}
+		// arrow keys to move
+		switch (event.key) {
+			case 'ArrowLeft':
+				if (checkCollision($playerX - 1, $playerY)) {
+					break;
+				}
+				playerX.set($playerX - 1);
+				lastMousePosition = $playerX * CELL_SIZE;
+				break;
+			case 'ArrowRight':
+				if (checkCollision($playerX + 1, $playerY)) {
+					break;
+				}
+				playerX.set($playerX + 1);
+				lastMousePosition = $playerX * CELL_SIZE;
+				break;
+			default:
+				break;
+		}
+	};
+
 	onMount(() => {
 		// set sizes
 		MAZE_WIDTH = Math.ceil(innerWidth / CELL_SIZE);
 		MAZE_HEIGHT = Math.floor((3 * innerHeight) / CELL_SIZE);
-		EMPTY_ZONE_HEIGHT = Math.floor(innerHeight / 2 / CELL_SIZE);
+
+		EMPTY_ZONE_HEIGHT =
+			innerWidth > 768
+				? Math.floor(innerHeight / 2 / CELL_SIZE)
+				: Math.floor((3 * innerHeight) / 4 / CELL_SIZE);
 
 		// set player position
-		playerX.set(Math.floor(MAZE_WIDTH / 2));
+		if (innerWidth > 768) {
+			playerX.set(Math.floor(MAZE_WIDTH / 2));
+			playerYOffset = 10;
+		} else {
+			playerX.set(5);
+			playerYOffset = Math.floor(MAZE_HEIGHT / 6);
+		}
+		playerY.set(playerYOffset);
 
 		generateMaze();
 		if (browser) {
@@ -420,6 +532,8 @@
 	bind:innerHeight
 	on:scroll={handleScroll}
 	on:mousemove={handleMouseMove}
+	on:keypress={handleKeyPress}
+	on:keydown={handleKeyDown}
 />
 
 <div class="w-screen h-[350vh] pointer-events-none select-none">
@@ -533,7 +647,7 @@
 		<img
 			alt="Stone(red) replaces Scissors(blue) replaces Paper(green) replaces stone, click to place checkpoint, right click to teleport to last checkpoint"
 			src={innerWidth > 768 ? StonePaperScissors : StonePaperScissorsMobile}
-			class="absolute top-16 mt-24 md:mt-6 h-[30%] md:h-[35%] pointer-events-none select-none"
+			class="absolute top-16 mt-24 md:mt-6 w-[90%] md:w-auto md:h-[35%] pointer-events-none select-none"
 		/>
 	</div>
 	<!-- go to checkpoint button for mobile -->
@@ -549,7 +663,8 @@
 		class="absolute top-0 left-0 w-screen h-[350vh] pointer-events-auto overflow-hidden"
 		aria-hidden="true"
 		on:mousedown={handleMouseDown}
-		on:touchmove={handleMouseMove}
+		on:touchstart={handleTouchStart}
+		on:touchmove={handleTouchMove}
 		on:contextmenu={handleRightClick}
 	>
 		{#each maze as row, y}
