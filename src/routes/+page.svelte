@@ -5,6 +5,7 @@
 	import StonePaperScissors from '$lib/stone-paper-scissor.svg';
 	import StonePaperScissorsMobile from '$lib/stone-paper-scissor-mobile.svg';
 	import { goto } from '$app/navigation';
+	import JoyStick from '$lib/JoyStick.svelte';
 
 	let maze: Array<Array<number | 'stone' | 'paper' | 'scissors' | 'checkpoint'>> = [];
 	let playerX = tweened(25, { duration: 0 });
@@ -28,6 +29,10 @@
 	let freeRoam = false;
 	let showOverlay = false;
 	let overlayDiv: HTMLDivElement;
+	let joystickUp = false;
+	let joystickDown = false;
+	let joystickLeft = false;
+	let joystickRight = false;
 
 	let hardMode = false;
 
@@ -44,7 +49,8 @@
 				// spawn a random item at spawn
 				const items = ['stone', 'paper', 'scissors'];
 				const x = Math.floor(Math.random() * (MAZE_WIDTH - 2)) + 1;
-				const y = Math.floor(Math.random() * (EMPTY_ZONE_HEIGHT - 2 - 10)) + playerYOffset;
+				const y =
+					Math.floor(Math.random() * (EMPTY_ZONE_HEIGHT - 2 - playerYOffset)) + playerYOffset;
 				maze[y][x] = items[Math.floor(Math.random() * items.length)] as
 					| 'stone'
 					| 'paper'
@@ -60,7 +66,7 @@
 		}, 1000);
 	};
 
-	const crossBrowserScroll = (scrollY: number) => {
+	const crossBrowserScroll = (scrollY: number, direct: boolean = false) => {
 		const ios = () => {
 			if (typeof window === `undefined` || typeof navigator === `undefined`) return false;
 
@@ -81,7 +87,8 @@
 			// Other browsers
 			if (typeof window !== 'undefined') {
 				window.scrollTo({
-					top: scrollY
+					top: scrollY,
+					behavior: direct || innerWidth >= 768 ? 'auto' : 'smooth'
 				});
 			}
 		}
@@ -225,6 +232,10 @@
 	let lastMousePosition = 0;
 	function handleMouseMove(event: MouseEvent) {
 		if (showPopup) return;
+		// reject touch
+		if (innerWidth <= 768) {
+			return;
+		}
 		const targetCellX = Math.floor(event.clientX / CELL_SIZE);
 		lastMousePosition = event.clientX;
 
@@ -256,49 +267,9 @@
 		}
 	}
 
-	let touchStartX = 0;
-	let playerStartX = 0;
-	function handleTouchStart(event: TouchEvent) {
-		if (showPopup) return;
-		const touch = event.touches[0];
-		touchStartX = touch.clientX;
-		playerStartX = $playerX;
-	}
-
-	function handleTouchMove(event: TouchEvent) {
-		if (showPopup) return;
-		// move relative to touchstart using amount of touchmove
-		const touch = event.touches[0];
-		// sensitivity
-		const diff = touch.clientX - touchStartX;
-		const targetCellX = playerStartX + Math.floor(diff / CELL_SIZE);
-
-		// Move to the target cell until we hit a wall
-		if (targetCellX < $playerX) {
-			for (let x = $playerX - 1; x >= targetCellX; x--) {
-				if (checkCollision(x, $playerY)) {
-					break;
-				}
-				playerX.set(x);
-			}
-		} else if (targetCellX > $playerX) {
-			for (let x = $playerX + 1; x <= targetCellX; x++) {
-				if (checkCollision(x, $playerY)) {
-					break;
-				}
-				playerX.set(x);
-			}
-		}
-	}
-
 	let lastScrollPosition = 0;
-	let checkpointScroll = false;
 	function handleScroll() {
 		if (showPopup) return;
-		if (checkpointScroll) {
-			checkpointScroll = false;
-			return;
-		}
 		if (typeof window !== 'undefined') {
 			const newScrollY = window.scrollY;
 			const targetCellY = Math.floor(newScrollY / CELL_SIZE) + playerYOffset;
@@ -335,26 +306,28 @@
 		}
 	}
 
+	const setCheckpoint = () => {
+		if (inventory.checkpoints === 0) {
+			alert('You are out of checkpoints!');
+			return;
+		}
+		if (maze[$playerY][$playerX] === 'checkpoint') {
+			return;
+		}
+		maze[$playerY][$playerX] = 'checkpoint';
+		checkpoints.push({ x: $playerX, y: $playerY, scrollY: window.scrollY });
+		inventory.checkpoints--;
+	};
+
 	const handleMouseDown = (event: MouseEvent | TouchEvent) => {
 		if (showPopup) return;
 		// check touch input
 		if (event.type === 'touchstart') {
-			const touch = (event as TouchEvent).touches[0];
-
-			// double click to add checkpoint
-			if (touch.target === event.currentTarget) {
-				event.preventDefault();
-				if (inventory.checkpoints === 0) {
-					alert('You are out of checkpoints!');
-					return;
-				}
-				if (maze[$playerY][$playerX] === 'checkpoint') {
-					return;
-				}
-				maze[$playerY][$playerX] = 'checkpoint';
-				checkpoints.push({ x: $playerX, y: $playerY, scrollY: window.scrollY });
-				inventory.checkpoints--;
-			}
+			event.preventDefault();
+		}
+		// reject on mobile
+		if (innerWidth <= 768) {
+			return;
 		}
 
 		event = event as MouseEvent;
@@ -364,16 +337,7 @@
 		}
 		// single left click places a yellow checkpoint at the player's current position
 		if (event.button === 0) {
-			if (inventory.checkpoints === 0) {
-				alert('You are out of checkpoints!');
-				return;
-			}
-			if (maze[$playerY][$playerX] === 'checkpoint') {
-				return;
-			}
-			maze[$playerY][$playerX] = 'checkpoint';
-			checkpoints.push({ x: $playerX, y: $playerY, scrollY: window.scrollY });
-			inventory.checkpoints--;
+			setCheckpoint();
 		}
 	};
 
@@ -385,8 +349,7 @@
 			const lastCheckpoint = checkpoints[checkpoints.length - 1];
 			playerX.set(lastCheckpoint.x);
 			playerY.set(lastCheckpoint.y);
-			checkpointScroll = true;
-			crossBrowserScroll(lastCheckpoint.scrollY);
+			crossBrowserScroll(lastCheckpoint.scrollY, true);
 			maze[lastCheckpoint.y][lastCheckpoint.x] = 0; // remove the checkpoint
 			checkpoints.pop();
 		}
@@ -429,6 +392,42 @@
 		}
 	};
 
+	let joystickInterval: NodeJS.Timeout;
+	const debounceCheckJoystick = (delay: number | undefined) => {
+		joystickInterval = setInterval(() => {
+			checkJoystick();
+		}, delay);
+	};
+
+	const checkJoystick = () => {
+		if (joystickUp) {
+			if (checkCollision($playerX, $playerY - 1)) {
+				return;
+			}
+			// playerY.set($playerY - 1);
+			crossBrowserScroll(window.scrollY - CELL_SIZE);
+		}
+		if (joystickDown) {
+			if (checkCollision($playerX, $playerY + 1)) {
+				return;
+			}
+			// playerY.set($playerY + 1);
+			crossBrowserScroll(window.scrollY + CELL_SIZE);
+		}
+		if (joystickLeft) {
+			if (checkCollision($playerX - 1, $playerY)) {
+				return;
+			}
+			playerX.set($playerX - 1);
+		}
+		if (joystickRight) {
+			if (checkCollision($playerX + 1, $playerY)) {
+				return;
+			}
+			playerX.set($playerX + 1);
+		}
+	};
+
 	onMount(() => {
 		const urlParams = new URLSearchParams(window.location.search);
 		hardMode = urlParams.get('hardmode') === 'true';
@@ -448,7 +447,7 @@
 		EMPTY_ZONE_HEIGHT =
 			innerWidth > 768
 				? Math.floor(innerHeight / 2 / CELL_SIZE)
-				: Math.floor((3 * innerHeight) / 4 / CELL_SIZE);
+				: Math.floor((0.6 * innerHeight) / CELL_SIZE);
 
 		// set player position
 		if (innerWidth > 768) {
@@ -456,16 +455,22 @@
 			playerYOffset = 10;
 		} else {
 			playerX.set(5);
-			playerYOffset = Math.floor(MAZE_HEIGHT / 6);
+			playerYOffset = Math.floor(innerHeight / CELL_SIZE / 2);
 		}
 		playerY.set(playerYOffset);
 
 		generateMaze();
 		if (browser) {
-			crossBrowserScroll(0);
+			crossBrowserScroll(0, true);
+		}
+
+		// for mobile devices enable joystick
+		if (innerWidth <= 768) {
+			debounceCheckJoystick(100);
 		}
 		return () => {
 			if (timerInterval) clearInterval(timerInterval);
+			if (joystickInterval) clearInterval(joystickInterval);
 		};
 	});
 
@@ -513,15 +518,14 @@
 	const handleRestart = () => {
 		timerStarted = false;
 		timer = 0;
-		checkpointScroll = true;
-		crossBrowserScroll(0);
+		crossBrowserScroll(0, true);
 		// set player position
 		if (innerWidth > 768) {
 			playerX.set(Math.floor(MAZE_WIDTH / 2));
 			playerYOffset = 10;
 		} else {
 			playerX.set(5);
-			playerYOffset = Math.floor(MAZE_HEIGHT / 6);
+			playerYOffset = Math.floor(innerHeight / CELL_SIZE / 2);
 		}
 		playerY.set(playerYOffset);
 		usedItems = 0;
@@ -655,8 +659,7 @@
 						playerYOffset = Math.floor(MAZE_HEIGHT / 6);
 					}
 					playerY.set(playerYOffset);
-					checkpointScroll = true;
-					crossBrowserScroll(0);
+					crossBrowserScroll(0, true);
 				}}
 			>
 				Go to spawn 🏁
@@ -692,15 +695,13 @@
 		<img
 			alt="Stone(red) replaces Scissors(blue) replaces Paper(green) replaces stone, click to place checkpoint, right click to teleport to last checkpoint"
 			src={innerWidth > 768 ? StonePaperScissors : StonePaperScissorsMobile}
-			class="absolute top-16 mt-24 md:mt-6 w-[90%] md:w-auto md:h-[35%] pointer-events-none select-none"
+			class="absolute top-32 mt-24 md:mt-6 w-[90%] md:w-auto md:h-[35%] pointer-events-none select-none"
 		/>
 	</div>
 	<div
 		class="absolute top-0 left-0 w-screen h-[350vh] pointer-events-auto overflow-hidden"
 		aria-hidden="true"
 		on:mousedown={handleMouseDown}
-		on:touchstart={handleTouchStart}
-		on:touchmove={handleTouchMove}
 		on:contextmenu={handleRightClick}
 	>
 		{#each maze as row, y}
@@ -789,3 +790,18 @@
 		</div>
 	</div>
 {/if}
+
+<!-- <div class="fixed bottom-0 right-0 z-50 pointer-events-auto touch-auto"> -->
+{#if innerWidth <= 768}
+	<JoyStick
+		bind:up={joystickUp}
+		bind:down={joystickDown}
+		bind:left={joystickLeft}
+		bind:right={joystickRight}
+		ondblclick={setCheckpoint}
+		radius={50}
+		x={innerWidth / 2}
+		y={innerHeight - 200}
+	/>
+{/if}
+<!-- </div> -->

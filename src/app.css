@@ -6,3 +6,12 @@ html,
 body {
     overscroll-behavior-x: none;
 }
+
+/* touch event none to prevent scroll glitches on mobile */
+@media screen and (max-width: 1024px) {
+
+    html,
+    body {
+        touch-action: none;
+    }
+}
