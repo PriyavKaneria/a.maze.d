@@ -656,7 +656,7 @@
 						playerYOffset = 10;
 					} else {
 						playerX.set(5);
-						playerYOffset = Math.floor(MAZE_HEIGHT / 6);
+						playerYOffset = Math.floor(innerHeight / CELL_SIZE / 2);
 					}
 					playerY.set(playerYOffset);
 					crossBrowserScroll(0, true);
