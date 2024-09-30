@@ -60,6 +60,33 @@
 		}, 1000);
 	};
 
+	const crossBrowserScroll = (scrollY: number) => {
+		const ios = () => {
+			if (typeof window === `undefined` || typeof navigator === `undefined`) return false;
+
+			return /iPhone|iPad|iPod/i.test(
+				navigator.userAgent ||
+					navigator.vendor ||
+					// @ts-ignore
+					(window.opera && opera.toString() === `[object Opera]`)
+			);
+		};
+
+		if (ios()) {
+			// iOS
+			if (typeof window !== 'undefined') {
+				window.scroll(0, scrollY);
+			}
+		} else {
+			// Other browsers
+			if (typeof window !== 'undefined') {
+				window.scrollTo({
+					top: scrollY
+				});
+			}
+		}
+	};
+
 	function generateMaze() {
 		maze = Array(MAZE_HEIGHT)
 			.fill(0)
@@ -281,9 +308,7 @@
 				for (let y = $playerY - 1; y >= targetCellY; y--) {
 					if (checkCollision($playerX, y)) {
 						if (!freeRoam) {
-							window.scrollTo({
-								top: lastScrollPosition
-							});
+							crossBrowserScroll(lastScrollPosition);
 							break;
 						}
 					}
@@ -293,9 +318,7 @@
 				for (let y = $playerY + 1; y <= targetCellY; y++) {
 					if (checkCollision($playerX, y)) {
 						if (!freeRoam) {
-							window.scrollTo({
-								top: lastScrollPosition
-							});
+							crossBrowserScroll(lastScrollPosition);
 							break;
 						}
 					}
@@ -363,9 +386,7 @@
 			playerX.set(lastCheckpoint.x);
 			playerY.set(lastCheckpoint.y);
 			checkpointScroll = true;
-			window.scrollTo({
-				top: lastCheckpoint.scrollY
-			});
+			crossBrowserScroll(lastCheckpoint.scrollY);
 			maze[lastCheckpoint.y][lastCheckpoint.x] = 0; // remove the checkpoint
 			checkpoints.pop();
 		}
@@ -441,9 +462,7 @@
 
 		generateMaze();
 		if (browser) {
-			window.scrollTo({
-				top: 0
-			});
+			crossBrowserScroll(0);
 		}
 		return () => {
 			if (timerInterval) clearInterval(timerInterval);
@@ -495,9 +514,7 @@
 		timerStarted = false;
 		timer = 0;
 		checkpointScroll = true;
-		window.scrollTo({
-			top: 0
-		});
+		crossBrowserScroll(0);
 		// set player position
 		if (innerWidth > 768) {
 			playerX.set(Math.floor(MAZE_WIDTH / 2));
@@ -639,9 +656,7 @@
 					}
 					playerY.set(playerYOffset);
 					checkpointScroll = true;
-					window.scrollTo({
-						top: 0
-					});
+					crossBrowserScroll(0);
 				}}
 			>
 				Go to spawn 🏁
