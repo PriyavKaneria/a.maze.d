@@ -483,7 +483,7 @@
 				link: playerLink,
 				time: timer,
 				items: usedItems,
-				hardMode: hardMode
+				hardmode: hardMode
 			})
 		});
 		if (response.ok) {
