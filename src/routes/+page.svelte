@@ -478,7 +478,13 @@
 		const response = await fetch('/api/leaderboard', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ name: playerName, link: playerLink, time: timer, items: usedItems })
+			body: JSON.stringify({
+				name: playerName,
+				link: playerLink,
+				time: timer,
+				items: usedItems,
+				hardMode: hardMode
+			})
 		});
 		if (response.ok) {
 			showPopup = false;
