@@ -27,6 +27,8 @@
 		const urlParams = new URLSearchParams(window.location.search);
 		hardmode = urlParams.get('hardmode') === 'true';
 		fetchEntries(hardmode);
+
+		document.documentElement.style.touchAction = 'auto';
 	});
 
 	const nextPage = () => {
@@ -48,7 +50,7 @@
 	};
 </script>
 
-<div class="container mx-auto p-4">
+<div class="container mx-auto p-4 touch-auto">
 	<div class="flex justify-between">
 		<div class="flex items-end justify-start gap-6">
 			<h1 class="text-2xl font-bold mb-4">{hardmode ? 'Hardboard' : ''} Leaderboard</h1>
@@ -81,23 +83,25 @@
 	<table class="min-w-full bg-white">
 		<thead>
 			<tr>
-				<th class="py-2 px-4 border-b text-left">Rank</th>
-				<th class="py-2 px-4 border-b text-left">Name</th>
-				<th class="py-2 px-4 border-b text-left">Social Media</th>
-				<th class="py-2 px-4 border-b text-left">Time (seconds)</th>
-				<th class="py-2 px-4 border-b text-left">Items used</th>
+				<th class="py-2 px-2 md:px-4 border-b text-left">Rank</th>
+				<th class="py-2 px-2 md:px-4 border-b text-left">Name</th>
+				<th class="py-2 px-2 md:px-4 border-b text-left">Social Media</th>
+				<th class="py-2 px-2 md:px-4 border-b text-left">Time (seconds)</th>
+				<th class="py-2 px-2 md:px-4 border-b text-left">Items used</th>
 			</tr>
 		</thead>
 		<tbody>
 			{#each entries as entry, index}
 				<tr>
-					<td class="py-2 px-4 border-b">{(currentPage - 1) * entriesPerPage + index + 1}</td>
-					<td class="py-2 px-4 border-b">{entry.name}</td>
-					<td class="py-2 px-4 border-b">
+					<td class="py-2 px-2 md:px-4 border-b"
+						>{(currentPage - 1) * entriesPerPage + index + 1}</td
+					>
+					<td class="py-2 px-2 md:px-4 border-b">{entry.name}</td>
+					<td class="py-2 px-2 md:px-4 border-b">
 						<a href={entry.link} target="_blank" class="text-blue-500">{entry.link}</a>
 					</td>
-					<td class="py-2 px-4 border-b">{entry.time}</td>
-					<td class="py-2 px-4 border-b">{entry.items}</td>
+					<td class="py-2 px-2 md:px-4 border-b">{entry.time}</td>
+					<td class="py-2 px-2 md:px-4 border-b">{entry.items}</td>
 				</tr>
 			{/each}
 		</tbody>
