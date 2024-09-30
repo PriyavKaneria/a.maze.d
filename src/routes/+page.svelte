@@ -433,7 +433,7 @@
 		hardMode = urlParams.get('hardmode') === 'true';
 
 		if (hardMode) {
-			alert('Try this hard mode maze now for a challenge!');
+			alert('Try this hard mode maze now for a challenge. No goto spawn button now!');
 		}
 
 		// set sizes
@@ -542,10 +542,7 @@
 	};
 
 	const enableHardMode = () => {
-		const url = new URL(window.location.toString());
-		url.searchParams.set('hardmode', 'true');
-		window.location.href = url.toString();
-		location.reload();
+		window.location.href = '/?hardmode=true';
 	};
 </script>
 
@@ -649,7 +646,7 @@
 			{/if}
 			<a
 				class="bg-amber-500 text-zinc-600 px-2 md:px-4 py-1 md:py-2 rounded-md pointer-events-auto cursor-pointer fixed top-32 md:top-12 right-6"
-				href="/leaderboard"
+				href={`/leaderboard${hardMode ? '?hardmode=true' : ''}`}
 			>
 				Leaderboard
 			</a>
@@ -667,6 +664,7 @@
 					playerY.set(playerYOffset);
 					crossBrowserScroll(0, true);
 				}}
+				disabled={hardMode}
 			>
 				Go to spawn 🏁
 			</button>
