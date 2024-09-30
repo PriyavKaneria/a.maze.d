@@ -695,7 +695,7 @@
 		<img
 			alt="Stone(red) replaces Scissors(blue) replaces Paper(green) replaces stone, click to place checkpoint, right click to teleport to last checkpoint"
 			src={innerWidth > 768 ? StonePaperScissors : StonePaperScissorsMobile}
-			class="absolute top-32 mt-24 md:mt-6 w-[90%] md:w-auto md:h-[35%] pointer-events-none select-none"
+			class="absolute top-32 mt-24 md:mt-8 md:top-16 w-[90%] md:w-auto md:h-[35%] pointer-events-none select-none"
 		/>
 	</div>
 	<div
