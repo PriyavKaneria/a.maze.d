@@ -22,6 +22,7 @@
 	let playerYOffset = 10;
 
 	let useEmojis = true;
+	let useTwoFingerMovement = false;
 	let timerStarted = false;
 	$: timer = 0;
 	let usedItems = 0;
@@ -94,7 +95,7 @@
 		}
 	};
 
-	function generateMaze() {
+	const generateMaze = () => {
 		maze = Array(MAZE_HEIGHT)
 			.fill(0)
 			.map(() => Array(MAZE_WIDTH).fill(1));
@@ -185,9 +186,9 @@
 					| 'checkpoint';
 			}
 		}
-	}
+	};
 
-	function checkCollision(cellX: number, cellY: number): boolean {
+	const checkCollision = (cellX: number, cellY: number): boolean => {
 		if (cellX < 0 || cellX >= MAZE_WIDTH || cellY < 0 || cellY >= MAZE_HEIGHT) {
 			return true; // Treat out-of-bounds as collision
 		}
@@ -227,15 +228,14 @@
 			}
 		}
 		return maze[cellY][cellX] === 1;
-	}
+	};
 
 	let lastMousePosition = 0;
-	function handleMouseMove(event: MouseEvent) {
+	const handleMouseMove = (event: MouseEvent) => {
 		if (showPopup) return;
 		// reject touch
-		if (innerWidth <= 768) {
-			return;
-		}
+		if (innerWidth <= 768) return;
+		if (useTwoFingerMovement) return;
 		const targetCellX = Math.floor(event.clientX / CELL_SIZE);
 		lastMousePosition = event.clientX;
 
@@ -265,10 +265,10 @@
 			overlayDiv.style.transition = 'clip-path 0.25s ease-out';
 			overlayDiv.style.clipPath = `circle(${radius * CELL_SIZE}px at ${x}px ${y}px)`;
 		}
-	}
+	};
 
 	let lastScrollPosition = 0;
-	function handleScroll() {
+	const handleScroll = (event: UIEvent) => {
 		if (showPopup) return;
 		if (typeof window !== 'undefined') {
 			const newScrollY = window.scrollY;
@@ -297,14 +297,40 @@
 				}
 			}
 			lastScrollPosition = window.scrollY;
-			if (innerWidth > 768) {
+			if (innerWidth > 768 && lastMousePosition != -1) {
 				const mouseEvent = new MouseEvent('mousemove', {
 					clientX: lastMousePosition
 				});
+				console.log(lastMousePosition);
+
 				handleMouseMove(mouseEvent);
 			}
 		}
-	}
+		console.log('scroll');
+	};
+
+	let debounceHack = 0;
+	const handleWheel = (event: WheelEvent) => {
+		// for left right movement on left right scroll using two fingers
+		// reject mobile
+		if (innerWidth <= 768) return;
+		debounceHack++;
+		if (debounceHack % 13 == 0 && Math.abs(event.deltaY) < Math.abs(event.deltaX)) {
+			lastMousePosition = -1;
+			debounceHack = 0;
+			if (event.deltaX > 0) {
+				if (checkCollision($playerX - 1, $playerY)) {
+					return;
+				}
+				playerX.set($playerX - 1);
+			} else {
+				if (checkCollision($playerX + 1, $playerY)) {
+					return;
+				}
+				playerX.set($playerX + 1);
+			}
+		}
+	};
 
 	const setCheckpoint = () => {
 		if (inventory.checkpoints === 0) {
@@ -550,13 +576,14 @@
 	bind:innerWidth
 	bind:innerHeight
 	on:scroll={handleScroll}
+	on:wheel={handleWheel}
 	on:mousemove={handleMouseMove}
 	on:keydown={handleKeyDown}
 />
 
 <div class="w-screen h-[350vh] pointer-events-none select-none">
 	<div
-		class="fixed top-0 left-0 w-full h-32 md:h-12 bg-white text-sm md:text-lg text-black flex items-center justify-center z-10 select-none gap-6 flex-col md:flex-row overflow-visible"
+		class="fixed top-0 pt-3 md:pt-0 left-0 w-full h-32 md:h-12 bg-white text-sm md:text-lg text-black flex items-center justify-center z-10 select-none gap-6 flex-col md:flex-row overflow-visible"
 	>
 		<div class="flex gap-6">
 			<span>Inventory:</span>
@@ -624,6 +651,31 @@
 						}}
 					/>
 					use colors
+				</label>
+			</div>
+			<!-- radio button group for movement control -->
+			<div class="flex gap-2 ml-4 pointer-events-auto cursor-pointer z-20">
+				<label>
+					<input
+						type="radio"
+						name="useTwoFingerMovement"
+						checked={useTwoFingerMovement}
+						on:change={() => {
+							useTwoFingerMovement = true;
+						}}
+					/>
+					use only twofinger gestures
+				</label>
+				<label>
+					<input
+						type="radio"
+						name="useMouseX"
+						checked={!useTwoFingerMovement}
+						on:change={() => {
+							useTwoFingerMovement = false;
+						}}
+					/>
+					use mouse X
 				</label>
 			</div>
 			{#if freeRoam}
