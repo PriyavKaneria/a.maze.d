@@ -462,6 +462,11 @@
 			alert('Try this hard mode maze now for a challenge. No goto spawn button now!');
 		}
 
+		if (innerHeight < 500) {
+			alert('Please use a bigger screen for a better experience');
+			location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+		}
+
 		// set sizes
 		MAZE_WIDTH = Math.ceil(innerWidth / CELL_SIZE);
 		MAZE_HEIGHT = hardMode
