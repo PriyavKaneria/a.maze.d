@@ -747,7 +747,7 @@
 		</button> -->
 		</div>
 	</div>
-	<div class="flex justify-center items-start">
+	<div class="flex justify-center items-start select-none pointer-events-none">
 		<img
 			alt="Stone(red) replaces Scissors(blue) replaces Paper(green) replaces stone, click to place checkpoint, right click to teleport to last checkpoint"
 			src={innerWidth > 768 ? StonePaperScissors : StonePaperScissorsMobile}
