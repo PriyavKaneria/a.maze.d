@@ -10,6 +10,9 @@ export default {
 				include: ['/*'],
 				exclude: ['<all>']
 			}
-		})
+		}),
+		csrf: {
+			checkOrigin: true
+		}
 	}
 };
