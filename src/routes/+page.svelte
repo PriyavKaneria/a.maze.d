@@ -583,12 +583,12 @@
 
 <div class="w-screen h-[350vh] pointer-events-none select-none">
 	<div
-		class="fixed top-0 pt-3 md:pt-0 left-0 w-full h-32 md:h-12 bg-white text-sm md:text-lg text-black flex items-center justify-center z-10 select-none gap-6 flex-col md:flex-row overflow-visible"
+		class="fixed top-0 pt-3 md:pt-0 left-0 w-full h-32 md:h-12 bg-white text-sm md:text-lg text-black flex items-center justify-center z-10 select-none gap-4 flex-col md:flex-row overflow-visible"
 	>
-		<div class="flex gap-6">
+		<div class="flex gap-4">
 			<span>Inventory:</span>
-			<div class="flex gap-6 flex-col md:flex-row">
-				<div class="flex gap-6">
+			<div class="flex gap-4 flex-col md:flex-row">
+				<div class="flex gap-4">
 					<span class="flex gap-1">
 						{#if useEmojis}
 							🪨
@@ -606,7 +606,7 @@
 						Paper : {inventory.paper}
 					</span>
 				</div>
-				<div class="flex gap-6">
+				<div class="flex gap-4">
 					<span class="flex gap-1">
 						{#if useEmojis}
 							✂️
